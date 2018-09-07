@@ -1,0 +1,51 @@
+function IC = funGenerate(M,N,Nfamily,dt,Tmax)
+%Input
+%M, N, Nfamily, dt, Tmax
+
+%Material Index
+MaterialIndex = randi(Nfamily,M,N);
+
+%Wind: direction of the wind
+maxspeed = 15;
+mpb = 10;
+Wind = generatewind(maxspeed, mpb, M, N);
+
+%Tinitial: initial temperature
+Tinitial = 60*ones(M,N);
+Tinitial(25:30,25:30)= 101;
+
+%EReleaseRate: the rate at which energy is released
+%EReleaseRate = 60 * ones(M,N); %FJ
+EReleaseRate = 24 * MaterialIndex; %fj
+
+%Tignite: temperature at which the material ignites%
+Tignite = 90* ones(M,N); %fFJ
+sim
+david
+while(i < M)%fj
+    while (j<N)%fj
+if(M==15 || M== 40 || N == 15 || N == 40)%fj
+    Tignite = 40000 * ones(M,N);%fj
+end%fj
+i=i+1;%fj
+    end%fj
+    j=j+1;%fj
+end%fj
+%Tignite = 90 * randi(3,M,N); %fj;
+
+% for i = 1:M
+%     for j = 1:N
+%         if MaterialIndex(i,j) == 1;
+%             EReleaseRate(i,j) = 5000; %units?
+%             %Tignite(i,j) = MaterialIndex(i,j)/4*5;
+%         end
+%     end
+% end
+
+Tburntime = 4*ones(M,N);
+IC.Tinitial = Tinitial;
+IC.EReleaseRate = EReleaseRate;
+IC.Tignite = Tignite;
+IC.Tburntime = Tburntime;
+IC.Wind = Wind;
+IC.MaterialIndex = MaterialIndex;

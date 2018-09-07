@@ -1,0 +1,93 @@
+
+%
+%Wildfire Simulation 
+%M. Wentworth
+%9/18/16, updated on 11/2/16
+%Simulate wildfire by modeling the temperature at specified nodes
+%
+%Required files
+%   compute_burning.m
+%   compute_Newton.m
+%   compute_convection.m
+%   funGenerate.m
+%   generatewind.m
+%   
+
+clear all
+
+%Initialization
+%Grid
+M = 50;
+N = 50;
+%Time
+dt = .05;
+T= 25;
+
+Tmax = floor(T/dt);
+Nfamily = 5;
+k = .06; %
+
+%Initialize Variables
+yog=0.001;
+lightningbolt = 60;
+IC = funGenerate(M,N,Nfamily,dt,Tmax);
+MaterialIndex = IC.MaterialIndex;
+Wind = IC.Wind;
+EReleaseRate = IC.EReleaseRate;
+Tignite = IC.Tignite;
+Tburntime = IC.Tburntime;
+Tinitial = IC.Tinitial;
+
+Temp = zeros(M,N,Tmax);
+Tcurrent = Tinitial;
+dT = 0;
+
+
+for h = 1:Tmax
+   
+    %save
+    Temp(:,:,h) = Tcurrent;
+    Tnew = zeros(size(Tcurrent));
+   
+    
+    for i = 2:M-1
+        for j = 2:N-1
+            
+            %Changes due to burning
+            [dT_fire, Tburntime(i,j)] = compute_burning(Tburntime(i,j),Tcurrent(i,j),Tignite(i,j),EReleaseRate(i,j),dt);
+            
+            %Changes due to neighboring nodes
+            dT_Newton = compute_Newton(Tcurrent,i,j,k, dt);
+                       
+            %Changes due to wind!
+            dT_wind = compute_convection(Tcurrent(i-1:i+1,j-1:j+1),[Wind(i,j),Wind(i+M,j)],dt);
+            
+            %Changes due to atmosphere
+            dt_at = yog*(lightningbolt - Tcurrent(i,j));
+            
+            %Update the temperature
+            Tnew(i,j) = Tcurrent(i,j) + dT_fire + dT_Newton + .1*dT_wind + dt_at;
+        end
+    end
+    
+ 
+    
+    %boundary
+    Tnew(1,2:end-1) = Tnew(2,2:end-1);
+    Tnew(end,2:end-1) = Tnew(end-1,2:end-1);
+    Tnew(:,1) = Tnew(:,2);
+    Tnew(:,end) = Tnew(:,end-1);
+    
+    Temp(:,:,h) = Tnew;
+    Tcurrent = Tnew;
+
+end
+    
+
+figure
+for h = 1:5:Tmax
+    if(Temp(:,:,h))
+    surf([1:M],[1:N], Temp(:,:,h));
+    axis([1,M, 1, M, 0, 1000])
+    pause
+end
